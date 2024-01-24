@@ -33,6 +33,9 @@ RUN set -eux; \
 	;
 
 ###> recipes ###
+###> doctrine/doctrine-bundle ###
+RUN install-php-extensions pdo_pgsql
+###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
 COPY --link frankenphp/conf.d/app.ini $PHP_INI_DIR/conf.d/
@@ -93,3 +96,20 @@ RUN set -eux; \
 	composer dump-env prod; \
 	composer run-script --no-dev post-install-cmd; \
 	chmod +x bin/console; sync;
+
+
+# Użyj obrazu bazowego
+FROM ubuntu:latest
+
+# Zainstaluj niezbędne pakiety
+RUN apt-get update && \
+    apt-get install -y autoconf php-dev
+
+# Ustaw zmienną środowiskową
+ENV PHP_AUTOCONF=/Users/natanielmarmucki/autoconf
+
+# Instalacja pdo_mysql
+RUN docker-php-ext-install pdo_mysql
+
+# Instalacja pdo_mysql
+RUN docker-php-ext-install pdo
