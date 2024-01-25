@@ -5,9 +5,10 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-
 use App\Entity\Post;
-use Doctrine\Persistence\ManagerRegistry;
+use App\Form\PostType;
+use Symfony\Component\HttpFoundation\Request;
+
 
 #[Route('/', requirements: ['_locale' => 'en|pl'])]
 
@@ -16,15 +17,33 @@ class PostController extends AbstractController
     #[Route('/{_locale}', methods: ['GET'], name: 'posts.index')]
     public function index(string $_locale = 'en'): Response
     {
-            return $this->render('post/index.html.twig');
+
+
+        return $this->render('post/index.html.twig');
     }
 
     #[Route('/{_locale}/post/new', methods: ['GET', 'POST'], name: 'posts.new')]
-    public function new(): Response
+    public function new(Request $request): Response
     {
-
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
-        return $this->render('post/new.html.twig');
+        $post = new Post();
+        // $post->setTitle('Write a blog post');
+        // $post->setContent('Post content');
+        $form = $this->createForm(PostType::class, $post);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // $form->getData() holds the submitted values
+            // but, the original `$task` variable has also been updated
+            $post = $form->getData();
+
+            // ... perform some action, such as saving the task to the database
+
+            return $this->redirectToRoute('posts.index');
+        }
+        return $this->render('post/new.html.twig', [
+            'form' => $form,
+        ]);
     }
 
     #[Route('/{_locale}/post/{id}/', methods: ['GET'], name: 'posts.show')]
@@ -34,10 +53,25 @@ class PostController extends AbstractController
     }
 
     #[Route('/{_locale}/post/{id}/edit', methods: ['GET', 'POST'], name: 'posts.edit')]
-    public function edit($id): Response
+    public function edit(Request $request): Response
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
-        return $this->render('post/edit.html.twig');
+        $post = new Post();
+        $form = $this->createForm(PostType::class, $post);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // $form->getData() holds the submitted values
+            // but, the original `$task` variable has also been updated
+            $post = $form->getData();
+
+            // ... perform some action, such as saving the task to the database
+
+            return $this->redirectToRoute('posts.index');
+        }
+        return $this->render('post/edit.html.twig', [
+            'form' => $form,
+        ]);
     }
 
     #[Route('/{_locale}/post/{id}/delete', methods: ['POST'], name: 'posts.delete')]
