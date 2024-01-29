@@ -44,9 +44,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToOne(cascade: ['persist', 'remove'])]
     private ?Image $image = null;
 
+    #[ORM\ManyToMany(targetEntity: self::class, inversedBy: 'following')]
+    #[ORM\JoinTable(name: 'followers')]
+    private Collection $followers;
+
+    #[ORM\ManyToMany(targetEntity: self::class, mappedBy: 'followers')]
+    #[ORM\JoinTable(name: 'followers')]
+    private Collection $following;
+
+    #[ORM\ManyToMany(targetEntity: Post::class, inversedBy: 'usersThatLike')]
+    #[ORM\JoinTable(name: 'likes')]
+    private Collection $likedPost;
+
+    #[ORM\ManyToMany(targetEntity: Post::class, inversedBy: 'usersThatDontLike')]
+    #[ORM\JoinTable(name: 'dislikes')]
+    private Collection $dislikedPost;
+
     public function __construct()
     {
         $this->posts = new ArrayCollection();
+        $this->followers = new ArrayCollection();
+        $this->following = new ArrayCollection();
+        $this->likedPost = new ArrayCollection();
+        $this->dislikedPost = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -169,6 +189,105 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setImage(?Image $image): static
     {
         $this->image = $image;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getFollowers(): Collection
+    {
+        return $this->followers;
+    }
+
+    public function addFollower(self $follower): static
+    {
+        if (!$this->followers->contains($follower)) {
+            $this->followers->add($follower);
+        }
+
+        return $this;
+    }
+
+    public function removeFollower(self $follower): static
+    {
+        $this->followers->removeElement($follower);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getFollowing(): Collection
+    {
+        return $this->following;
+    }
+
+    public function addFollowing(self $following): static
+    {
+        if (!$this->following->contains($following)) {
+            $this->following->add($following);
+            $following->addFollower($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFollowing(self $following): static
+    {
+        if ($this->following->removeElement($following)) {
+            $following->removeFollower($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Post>
+     */
+    public function getLikedPost(): Collection
+    {
+        return $this->likedPost;
+    }
+
+    public function addLikedPost(Post $likedPost): static
+    {
+        if (!$this->likedPost->contains($likedPost)) {
+            $this->likedPost->add($likedPost);
+        }
+
+        return $this;
+    }
+
+    public function removeLikedPost(Post $likedPost): static
+    {
+        $this->likedPost->removeElement($likedPost);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Post>
+     */
+    public function getDislikedPost(): Collection
+    {
+        return $this->dislikedPost;
+    }
+
+    public function addDislikedPost(Post $dislikedPost): static
+    {
+        if (!$this->dislikedPost->contains($dislikedPost)) {
+            $this->dislikedPost->add($dislikedPost);
+        }
+
+        return $this;
+    }
+
+    public function removeDislikedPost(Post $dislikedPost): static
+    {
+        $this->dislikedPost->removeElement($dislikedPost);
 
         return $this;
     }
