@@ -13,6 +13,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
+use App\Services\ImageUploader;
 
 class DashboardController extends AbstractController
 {
@@ -25,7 +26,7 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/dashboard/profile', name: 'app_profile')]
-    public function profile(Request $request, EntityManagerInterface $entityManager, Security $security): Response
+    public function profile(Request $request, EntityManagerInterface $entityManager, Security $security, ImageUploader $imageUploader): Response
     {
         // change image
         $image = new Image();
@@ -33,12 +34,18 @@ class DashboardController extends AbstractController
         $imageForm->handleRequest($request);
         $user = $this->getUser();
         if ($imageForm->isSubmitted() && $imageForm->isValid()) {
-            // $image = $imageForm->getData();
-            $image->setPath($imageForm->get('imageFile')->getData()->getClientOriginalName());
-            if ($user->getImage()) {
-                $oldImage = $entityManager->getRepository(Image::class)->find($user->getImage()->getId());
-                $entityManager->remove($oldImage);
-            }
+            $imageFile = $imageForm->get('imageFile')->getData();
+            if ($imageFile) {
+                if ($user->getImage()?->getPath()) {
+                    unlink($this->getParameter('images_directory') . '/' .  $user->getImage()->getPath());
+                }
+                $newFilename = $imageUploader->upload($imageFile);
+
+                $image->setPath($newFilename);
+                if ($user->getImage()) {
+                     $oldImage = $entityManager->getRepository(Image::class)->find($user->getImage()->getId());
+                     $entityManager->remove($oldImage);
+                }
             $user->setImage($image);
             $entityManager->persist($image);
             $entityManager->persist($user);
@@ -47,6 +54,7 @@ class DashboardController extends AbstractController
                 'status-image',
                 'image-updated'
             );
+            }
             return $this->redirectToRoute('app_profile');
         }
 
