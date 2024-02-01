@@ -66,7 +66,8 @@ class PostController extends AbstractController
     #[Route('/{_locale}/post/{id}/edit', methods: ['GET', 'POST'], name: 'posts.edit')]
     public function edit(Post $post, Request $request, ManagerRegistry $doctrine): Response
     {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        // $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $this->denyAccessUnlessGranted('POST_EDIT', $post);
         $post->setUpdatedAt(new \DateTimeImmutable('now'));
         $form = $this->createForm(PostType::class, $post);
         $form->handleRequest($request);
@@ -85,7 +86,8 @@ class PostController extends AbstractController
     #[Route('/{_locale}/post/{id}/delete', methods: ['POST'], name: 'posts.delete')]
     public function delete(Post $post, ManagerRegistry $doctrine): Response
     {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        // $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $this->denyAccessUnlessGranted('POST_DELETE', $post);
         $entityManager = $doctrine->getManager();
         $entityManager->remove($post);
         $entityManager->flush();

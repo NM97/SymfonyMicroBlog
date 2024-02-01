@@ -131,7 +131,7 @@ class Post
         return $this->usersThatLike;
     }
 
-    public function addusersThatLike(User $usersThatLike): static
+    public function addUsersThatLike(User $usersThatLike): static
     {
         if (!$this->usersThatLike->contains($usersThatLike)) {
             $this->usersThatLike->add($usersThatLike);
@@ -141,7 +141,7 @@ class Post
         return $this;
     }
 
-    public function removeusersThatLike(User $usersThatLike): static
+    public function removeUsersThatLike(User $usersThatLike): static
     {
         if ($this->usersThatLike->removeElement($usersThatLike)) {
             $usersThatLike->removeLikedPost($this);

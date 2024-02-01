@@ -47,6 +47,10 @@ class PostRepository extends ServiceEntityRepository
         $dbquery = $this->createQueryBuilder('p')
         ->leftJoin('p.user', 'u')
         ->addSelect('u')
+        ->leftJoin('p.usersThatLike', 'l')
+        ->addSelect('COUNT(l) AS HIDDEN likes')
+        ->orderBy('likes', 'DESC')
+        ->groupBy('p')
         ->getQuery()
         ->getResult();
         return $this->paginator->paginate($dbquery, $page, 3);
@@ -57,8 +61,12 @@ class PostRepository extends ServiceEntityRepository
         $dbquery = $this->createQueryBuilder('p')
             ->leftJoin('p.user', 'u')
             ->addSelect('u')
+            ->addSelect('COUNT(l) AS HIDDEN likes')
+            ->leftJoin('p.usersThatLike', 'l')
+            ->orderBy('likes', 'DESC')
             ->where('p.user = :id')
             ->setParameter('id', $userId)
+            ->groupBy('p')
             ->getQuery()
             ->getResult();
 
@@ -70,7 +78,7 @@ class PostRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('p')
             ->select('p.id')
             ->andWhere('p.id = :postId')
-            ->andWhere('p.user = :authUser')
+            ->andWhere('usersThatLike.id = :authUser')
             ->innerJoin('p.usersThatLike', 'usersThatLike')
             ->setParameter('authUser', $authUser)
             ->setParameter('postId', $postId)
@@ -84,13 +92,43 @@ class PostRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('p')
             ->select('p.id')
             ->andWhere('p.id = :postId')
-            ->andWhere('p.user = :authUser')
+            ->andWhere('usersThatDontLike.id = :authUser')
             ->innerJoin('p.usersThatDontLike', 'usersThatDontLike')
             ->setParameter('authUser', $authUser)
             ->setParameter('postId', $postId)
             ->setMaxResults(1)
             ->getQuery()
             ->getResult();
+    }
+
+    public function searchPosts(string $query)
+    {
+        $querybuilder = $this->createQueryBuilder('p');
+        $searchTerms = $this->prepareQuery($query);
+
+        foreach ($searchTerms as $key => $term)
+        {
+            $querybuilder
+                 ->orWhere('p.title LIKE :t_'.$key)
+                 ->orWhere('p.content LIKE :t_'.$key)
+                 ->setParameter('t_'.$key, '%'.trim($term).'%'); 
+        }
+
+        $dbquery =  $querybuilder
+            ->select('p.title','p.id')
+            ->getQuery()
+            ->getResult();
+
+            return $dbquery;
+    }
+
+    private function prepareQuery(string $query): array
+    {
+        $terms = array_unique(explode(' ', $query));
+
+        return array_filter($terms, function ($term) {
+            return 2 <= mb_strlen($term);
+        });
     }
 
 //    /**
