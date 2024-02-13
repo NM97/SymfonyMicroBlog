@@ -6,11 +6,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Entity\Post;
+use App\Entity\User;
 use App\Form\PostType;
 use Symfony\Component\HttpFoundation\Request;
-use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Pusher\Pusher;
 
 
 #[Route('/', requirements: ['_locale' => 'en|pl'])]
@@ -27,7 +28,7 @@ class PostController extends AbstractController
     }
 
     #[Route('/{_locale}/post/new', methods: ['GET', 'POST'], name: 'posts.new')]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, Pusher $pusher): Response
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         $post = new Post();
@@ -41,6 +42,8 @@ class PostController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($post);
             $entityManager->flush();
+            $pusher->trigger('my-channel', 'new-post-event', 'New post: <a href="'.$this->generateUrl('posts.show',["id" => $post->getId()]).'">'.$post->getTitle().'</a>');
+
             return $this->redirectToRoute('posts.index');
         }
         return $this->render('post/new.html.twig', [
